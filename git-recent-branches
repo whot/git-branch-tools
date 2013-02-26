@@ -141,20 +141,14 @@ def last_commit(repo, reflog):
     reflog.commit = commit
 
 
-def print_commit(commit):
-    print ""
-    print "     commit %s" % commit.hexsha
-    print "     Author:  %s <%s>" % (commit.author, commit.author.email)
-    print "     Date:    " + print_date(commit.authored_date, commit.author_tz_offset)
-    print ""
-    print "         %s" % (commit.message.split("\n")[0])
+def print_commit(args, commit):
+    g = git.cmd.Git()
 
-
-def print_date(sec, tzoff):
-    t = time.gmtime(sec - tzoff)
-    tzoff *= -1
-    tz = " %+02d:%02d" % (tzoff/3600, (abs(tzoff)/60)%60)
-    return time.strftime("%a %b %d %H:%M:%S %Y", t) + tz
+    opts = ["-n 1"] # git handles -n 1 -n 4 correctly so the user can override this
+    opts.append(args.log_options)
+    print ""
+    print g.log(opts, commit.hexsha)
+    print ""
 
 def walk_reflog(args, repo):
     head = repo.head
@@ -170,7 +164,7 @@ def walk_reflog(args, repo):
         print "%s: %s (last commit: %s)" % (l.reltime, l.to, l.reltime_commit)
 
         if args.last_commit:
-            print_commit(l.commit)
+            print_commit(args, l.commit)
 
         n += 1
         if args.limit > 0 and n >= args.limit:
@@ -188,6 +182,12 @@ if __name__ == "__main__":
                         type=int,
                         default=-1,
                         help="Limit output to N branches")
+    parser.add_argument("log_options",
+                        nargs="*",
+                        metavar="-- --pretty=oneline ...",
+                        help="Options passed to git log. Separate these with "
+                        "a -- from the other options")
+
     args = parser.parse_args(sys.argv[1:])
 
     repo = init_repo(args)
