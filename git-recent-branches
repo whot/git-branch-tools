@@ -7,10 +7,10 @@ import sys
 import time
 import logging
 import gettext
+import argparse
 
 class reflog(dict):
     pass
-
 
 def reltime_to_now(t, tzoff):
     utc_sec = t - tzoff;
@@ -40,7 +40,7 @@ def reltime_to_now(t, tzoff):
     return "%d %s ago" % (count, word(count))
 
 
-def init_repo():
+def init_repo(args):
     try:
         gitdir = os.environ["GIT_DIR"]
     except KeyError:
@@ -134,17 +134,61 @@ def filter_logs(repo, log_entries):
         flogs.append(log)
     return flogs
 
-def walk_reflog(repo):
+def last_commit(repo, reflog):
+    commit = repo.commit(reflog.log.newhexsha)
+    reflog.reltime_commit = reltime_to_now(commit.committed_date, commit.committer_tz_offset)
+    reflog.commit_msg = commit.message.split("\n")[0]
+    reflog.commit = commit
+
+
+def print_commit(commit):
+    print ""
+    print "     commit %s" % commit.hexsha
+    print "     Author:  %s <%s>" % (commit.author, commit.author.email)
+    print "     Date:    " + print_date(commit.authored_date, commit.author_tz_offset)
+    print ""
+    print "         %s" % (commit.message.split("\n")[0])
+
+
+def print_date(sec, tzoff):
+    t = time.gmtime(sec - tzoff)
+    tzoff *= -1
+    tz = " %+02d:%02d" % (tzoff/3600, (abs(tzoff)/60)%60)
+    return time.strftime("%a %b %d %H:%M:%S %Y", t) + tz
+
+def walk_reflog(args, repo):
     head = repo.head
     log = head.log()
     log.reverse()# sort as most recent first
     log = filter_logs(repo, log)
 
+    n = 0
     for l in log:
-        print "%s: %s (from %s)" % (reltime_to_now(*l.log.time), l.to, l.fro) 
+        l.reltime = reltime_to_now(*l.log.time)
+        last_commit(repo, l)
+
+        print "%s: %s (last commit: %s)" % (l.reltime, l.to, l.reltime_commit)
+
+        if args.last_commit:
+            print_commit(l.commit)
+
+        n += 1
+        if args.n > 0 and n >= args.n:
+            break
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)
 
-    repo = init_repo()
-    walk_reflog(repo)
+    parser = argparse.ArgumentParser(description="Show a list of recently used branches")
+    parser.add_argument("--last-commit",
+                        action="store_true",
+                        default=False,
+                        help="Show top commit on each branch")
+    parser.add_argument("-n",
+                        type=int,
+                        default=-1,
+                        help="Limit output to N branches")
+    args = parser.parse_args(sys.argv[1:])
+
+    repo = init_repo(args)
+    walk_reflog(args, repo)
