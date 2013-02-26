@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+
+import git
+import re
+import os
+import sys
+import time
+import logging
+import gettext
+
+class reflog(dict):
+    pass
+
+
+def reltime_to_now(t, tzoff):
+    utc_sec = t - tzoff;
+    now_utc_sec = time.time() - time.timezone
+
+    delta = now_utc_sec - utc_sec
+
+    if delta < 0:
+        logging.error("Date is in the future?")
+        return
+
+    datewords = (
+            (60 * 60 * 24 * 365, lambda n : gettext.ngettext("year", "years", n)),
+            (60 * 60 * 24 * 30, lambda n : gettext.ngettext("month", "months", n)),
+            (60 * 60 * 24 * 7, lambda n : gettext.ngettext("week", "weeks", n)),
+            (60 * 60 * 24, lambda n : gettext.ngettext("day", "days", n)),
+            (60 * 60, lambda n : gettext.ngettext("hour", "hours", n)),
+            (60, lambda n : gettext.ngettext("minute", "minutes", n)),
+    )
+
+    count = 0
+    for (secs, word) in datewords:
+        count = delta//secs
+        if count > 1: # better to have 8 days than 1 week
+            break
+
+    return "%d %s ago" % (count, word(count))
+
+
+def init_repo():
+    try:
+        gitdir = os.environ["GIT_DIR"]
+    except KeyError:
+        gitdir = os.getcwd() + "/.git"
+
+    if not git.repo.fun.is_git_dir(gitdir):
+        logging.critical("Not a git repository")
+        sys.exit(1)
+
+    repo = git.Repo.init(path = gitdir, mkdir = False)
+    return repo
+
+def is_sha1sum(s):
+    # 40-byte sha1sum, a direct checkout. This is safe
+    # there are no 40-char english words with a-f
+    m = re.match(r"[a-f0-9]{40}", s)
+    if m != None:
+        logging.debug("%s is a sha1sum" % s)
+    return m != None
+
+def is_sha1sum_short(s):
+    m = re.match(r"[a-f0-9]{7}", s)
+    if m == None:
+        return False
+        
+    # could be a word. check for at least two numbers, not as the first or
+    # last char. if you name your 7-letter branches a23dead, your fault.
+    # second condition: digit + letter + digit + letter
+    m = re.match(r".+[0-9]+.*[0-9]+.+", s)
+    if m == None:
+        m = re.match(r".?[0-9]+.+[0-9]+", s)
+
+    if m != None:
+        logging.debug("%s is a short sha1sum" % s)
+    return m != None
+
+def is_tag(repo, s):
+    if s in repo.tags:
+        logging.debug("%s is a tag" % s)
+        return True
+    return False
+
+def is_remote(repo, s):
+    for r in git.remote.Remote.iter_items(repo):
+        m = re.match(r"%s/.*" % r.name, s)
+        if m != None:
+            logging.debug("%s is a remote branch" % s)
+            return True
+    return False
+
+def is_headN(s):
+    m = re.match(r"HEAD@{[0-9]+}", s)
+    if m != None:
+        logging.debug("%s is direct HEAD checkout" % s)
+    return m != None
+
+# Drop direct checkouts, tag names, etc.
+def filter_logs(repo, log_entries):
+    flogs = [] # filtered logs as dict(from, to, log)
+    uniq = {}
+    for l in log_entries:
+        m = re.match(r".*checkout: moving from (.*) to (.*)", l.message)
+        if m == None:
+            continue
+
+        log = reflog()
+        log.fro = m.group(1)
+        log.to = m.group(2)
+        log.log = l
+
+        if uniq.has_key(log.to):
+            continue
+        uniq[log.to] = 1
+
+        if is_headN(log.to):
+            continue
+
+        # skip direct checkouts
+        if is_sha1sum(log.to):
+            continue
+
+        if is_sha1sum_short(log.to):
+            continue
+
+        if is_remote(repo, log.to):
+            continue
+
+        if is_tag(repo, log.to):
+            continue
+
+        flogs.append(log)
+    return flogs
+
+def walk_reflog(repo):
+    head = repo.head
+    log = head.log()
+    log.reverse()# sort as most recent first
+    log = filter_logs(repo, log)
+
+    for l in log:
+        print "%s: %s (from %s)" % (reltime_to_now(*l.log.time), l.to, l.fro) 
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.ERROR)
+
+    repo = init_repo()
+    walk_reflog(repo)
