@@ -173,7 +173,7 @@ def walk_reflog(args, repo):
             print_commit(l.commit)
 
         n += 1
-        if args.n > 0 and n >= args.n:
+        if args.limit > 0 and n >= args.limit:
             break
 
 if __name__ == "__main__":
@@ -184,7 +184,7 @@ if __name__ == "__main__":
                         action="store_true",
                         default=False,
                         help="Show top commit on each branch")
-    parser.add_argument("-n",
+    parser.add_argument("--limit",
                         type=int,
                         default=-1,
                         help="Limit output to N branches")
