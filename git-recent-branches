@@ -8,6 +8,7 @@ import time
 import logging
 import gettext
 import argparse
+import ConfigParser
 
 class reflog(dict):
     pass
@@ -150,6 +151,21 @@ def print_commit(args, commit):
     print g.log(opts, commit.hexsha)
     print ""
 
+def print_description(args, repo, reflog):
+    config = repo.config_reader()
+
+    try:
+        section = "branch \"%s\"" % reflog.to
+        desc = config.get_value(section, "description")
+        if desc:
+            print ""
+            for line in desc.split("\\n"):
+                print "    " + line
+    except ConfigParser.NoSectionError:
+        pass
+    except ConfigParser.NoOptionError:
+        pass
+
 def walk_reflog(args, repo):
     head = repo.head
     log = head.log()
@@ -163,6 +179,9 @@ def walk_reflog(args, repo):
 
         print "{:<40} {:<20} last commit {}".format(l.to, l.reltime, l.reltime_commit)
 
+        if args.print_description:
+            print_description(args, repo, l)
+
         if args.last_commit:
             print_commit(args, l.commit)
 
@@ -174,6 +193,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)
 
     parser = argparse.ArgumentParser(description="Show a list of recently used branches")
+    parser.add_argument("--print-description",
+                        action="store_true",
+                        default=False,
+                        help="Show branch description (if available)")
     parser.add_argument("--last-commit",
                         action="store_true",
                         default=False,
