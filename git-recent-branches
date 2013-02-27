@@ -161,7 +161,7 @@ def walk_reflog(args, repo):
         l.reltime = reltime_to_now(*l.log.time)
         last_commit(repo, l)
 
-        print "%s: %s (last commit: %s)" % (l.reltime, l.to, l.reltime_commit)
+        print "{:<40} {:<20} last commit {}".format(l.to, l.reltime, l.reltime_commit)
 
         if args.last_commit:
             print_commit(args, l.commit)
