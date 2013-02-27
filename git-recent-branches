@@ -165,6 +165,9 @@ def print_description(args, repo, reflog):
         pass
     except ConfigParser.NoOptionError:
         pass
+    except ConfigParser.ParsingError:
+        logging.debug("Parsing error in config")
+        pass
 
 def walk_reflog(args, repo):
     head = repo.head
