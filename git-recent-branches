@@ -13,6 +13,7 @@ import logging
 import gettext
 import argparse
 import ConfigParser
+import termcolor
 
 class reflog(dict):
     pass
@@ -226,6 +227,8 @@ def walk_reflog(args, repo):
     log.reverse()# sort as most recent first
     log = filter_logs(repo, log)
 
+    config = repo.config_reader()
+
     n = 0
     for l in log:
         l.reltime = reltime_to_now(*l.log.time)
@@ -233,7 +236,14 @@ def walk_reflog(args, repo):
 
         is_alive = "" if is_branch(repo, l.to) else "†"
 
-        print "{:<40} {:<20} last commit {:<15} {}".format(l.to, l.reltime, l.reltime_commit, is_alive)
+        branch = l.to
+        try:
+            if git_config_noauto(config.get_value("color", "branch", sys.stdout.isatty())):
+                    branch = termcolor.colored(branch, "yellow")
+        except ConfigParser.ParsingError:
+            logging.debug("Parsing error in config")
+
+        print "{:<45} {:<20} last commit {:<15} {}".format(branch, l.reltime, l.reltime_commit, is_alive)
 
         if args.print_description:
             print_description(args, repo, l)
