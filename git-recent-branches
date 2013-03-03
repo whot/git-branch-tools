@@ -258,7 +258,16 @@ def walk_reflog(args, repo):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)
 
-    parser = argparse.ArgumentParser(description="Show a list of recently used branches")
+    parser = argparse.ArgumentParser(description="Show a list of recently used branches",
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog="Output is in the form of\n\n"
+                                            " branchname      most recent checkout     most recent commit date\n\n"
+                                            "Branches are filtered\n"
+                                            " * if it looks like a sha1sum\n"
+                                            " * if it is a remote branch\n"
+                                            " * if it is a HEAD@{3}-like reflog\n"
+                                            " * if it is a tag name\n"
+                                            "Branches that do not exist anymore in the local repository are marked with a †")
     parser.add_argument("--print-description",
                         action="store_true",
                         default=False,
@@ -266,7 +275,7 @@ if __name__ == "__main__":
     parser.add_argument("--last-commit",
                         action="store_true",
                         default=False,
-                        help="Show top commit on each branch")
+                        help="Show top commit on each branch. Uses git log, use git log options for formatting the output")
     parser.add_argument("--limit",
                         type=int,
                         default=-1,
