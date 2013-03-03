@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# post-checkout hook that reminds you to add a branch description whenever
+# you checkout that branch. 
+#
+# save as: .git/hooks/post-checkout
+# don't forget to chmod +x
+#
+# add list of branches you don't want to be nagged about in your git config
+#
+# [nag]
+#       no-description-branches = "master"
+
+
+whitelist=`git config --get-all nag.no-description-branches`
+
+if [ -z "$whitelist" ]; then
+    whitelist="master"
+fi
+
+prev="$1"
+new="$2"
+branch_switch="$3"
+
+if [ -z "$branch_switch" ] || [ $branch_switch -eq 0 ]; then
+    exit 0 # this was a file checkout
+fi
+
+zero="0000000000000000000000000000000000000000"
+if [ "$prev" = "$zero" ]; then
+    exit 0 # this was a clone
+fi
+
+branch=`git rev-parse --abbrev-ref HEAD`
+git show-ref --verify --quiet refs/heads/$branch
+if [ $? -ne 0 ]; then
+    # not a branch
+    exit 0
+fi
+
+for b in $whitelist; do
+    if [ $b = $branch ]; then
+        exit 0
+    fi
+done
+
+description=`git config branch.$branch.description`
+if [ -z "$description" ]; then
+    echo "This branch has no description. Use: git branch --edit-description <branch>"
+fi
+
+
