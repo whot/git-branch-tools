@@ -17,6 +17,10 @@ import ConfigParser
 class reflog(dict):
     pass
 
+def git_config_noauto(setting):
+    """Convert true/false/"auto" state into a boolean"""
+    return setting is True or (setting  == "auto" and sys.stdout.isatty())
+
 def error(msg):
     print >> sys.stderr, msg
 
@@ -184,6 +188,14 @@ def print_commit(args, commit):
     g = git.cmd.Git()
 
     opts = ["-n 1"] # git handles -n 1 -n 4 correctly so the user can override this
+
+    try:
+        config = repo.config_reader()
+        if git_config_noauto(config.get_value("color", "pager", sys.stdout.isatty())):
+            opts.append(["--color=always"])
+    except  ConfigParser.ParsingError:
+        logging.debug("Parsing error in config")
+
     opts.append(args.log_options)
     print ""
     print g.log(opts, commit.hexsha)
