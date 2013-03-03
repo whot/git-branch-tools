@@ -1,0 +1,279 @@
+#!/bin/bash -u
+
+DEFAULT_ARCHIVE="archive"
+ARCHIVE=`git config branch-archive.directory`
+if [ -z "$ARCHIVE" ]; then
+    echo "git config branch-archive.directory is not set."
+    echo "Using default '$DEFAULT_ARCHIVE'."
+    ARCHIVE=$DEFAULT_ARCHIVE
+fi
+
+# Strip archive off the branch name, store in $2
+normalize_branch() {
+    local branch=$1
+    local __normalized_name=$2
+
+    branch=${branch/$ARCHIVE\/20*\//}
+    eval $__normalized_name="'$branch'"
+}
+
+# return 0 if $branch exists, or non-zero otherwise
+branch_exists() {
+    local branch=$1
+    git log -n1 $branch -- > /dev/null 2>&1
+    [[ $? -eq 0 ]] && return 0 || return 1
+}
+
+# return 0 if $tag exists, or non-zero otherwise
+tag_exists() {
+    local tag=$1
+    git log -n1 $tag -- > /dev/null 2>&1
+    [[ $? -eq 0 ]] && return 0 || return 1
+}
+
+# Create archived branch name from $branch and store in $2
+make_archive_branch_name() {
+    local branch=$1
+    local __archived_branch=$2
+
+    local normalized_branch=''
+    local year=`date +%Y`
+
+    normalize_branch $branch normalized_branch
+
+    local archive_branch_name="$ARCHIVE/$year/$normalized_branch"
+
+    eval $__archived_branch="'$archive_branch_name'"
+}
+
+# return tag name for $branch and store it in $2
+make_tag() {
+    local branch=$1
+    local date=`date +%Y-%m-%d`
+    local normalized_branch=''
+    local __tag=$2
+
+    normalize_branch $branch normalized_branch
+
+    tagname=archive-$date-$normalized_branch
+
+    eval $__tag="'$tagname'"
+}
+
+# Archive $branch to $ARCHIVES and tag last commit
+archive() {
+    local branch=$1
+    local archive_branch=''
+    local tag=''
+
+    case $branch in
+        $ARCHIVE*)
+            echo "Branch $branch appears to be archived already. Aborting."
+            exit 1
+            ;;
+        *)
+            if ! ( branch_exists $branch ); then
+                echo "Branch $branch does not exist."
+                exit 1
+            fi
+            ;;
+    esac
+
+    make_archive_branch_name $branch archive_branch
+    if ( branch_exists $archive_branch ); then
+        echo "Error: Branch $archive_branch already exists."
+        echo "Move out of the way first."
+        exit 1
+    fi
+
+    make_tag $branch tag
+    if ( tag_exists $tag ); then
+        echo "Error: Tag '$tag' already exists."
+        echo "Move out of the way first."
+        exit 1
+    fi
+
+    echo -n "Move branch $branch to $archive_branch? [y/n] "
+    read confirm
+    if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
+        exit 0;
+    fi
+
+    tmpfile=`mktemp`
+    cat > $tmpfile << EOF
+    Branch:   $branch. 
+    Archived: `date`.
+
+    Top commits:
+    `git log -n 10 --pretty=oneline $branch --`
+
+EOF
+
+    echo "Tag message:"
+    echo "------------------------------------------------------------------------"
+
+    cat $tmpfile
+    echo "------------------------------------------------------------------------"
+    echo -n "Edit message? [y/n] "
+    read confirm
+    if test "$confirm" = "y" || test "$confirm" = "Y"; then
+        $EDITOR $tmpfile
+    fi
+
+    git branch -m $branch $archive_branch
+    git tag  -a -F $tmpfile $tag $archive_branch
+    rm $tmpfile
+
+    echo "Archived and tagged as $tag."
+}
+
+# Search for $branch in the archive and move it back, leaving the tags
+# intact.
+restore() {
+    branch=$1
+
+    case $branch in
+        $ARCHIVE*)
+            if ! ( branch_exists $branch ); then
+                echo "Branch $branch does not exist in the archives"
+                exit 1
+            fi
+
+            branch_to_restore=$branch
+            ;;
+        *)
+            if ( branch_exists $branch ); then
+                echo "Branch $branch looks like a normal, existing branch"
+                exit 1
+            fi
+
+            echo "Searching for $branch in the archives"
+            for b in `git branch | grep $ARCHIVE | sed -e "s/\*\? \+//"`; do
+                local normalized_b=''
+                normalize_branch $b normalized_b
+
+                if [ "$normalized_b" = "$branch" ]; then
+                    echo "Found matching archived branch $b"
+                    branch_to_restore=$b
+                    break;
+                fi
+            done
+            ;;
+    esac
+
+    if [ -z "$branch_to_restore" ]; then
+        echo "Failed to find branch to restore"
+        exit 1
+    fi
+
+    local normalized_branch=''
+    normalize_branch $branch_to_restore normalized_branch
+    if ( branch_exists $normalized_branch ); then
+        echo "Attempting to restore to branch $normalized_branch, but it already exists."
+        echo "Move out of the way first"
+        exit 1
+    fi
+
+    echo -n "Restoring archived branch $branch_to_restore as $normalized_branch. [y/n] "
+    read confirm
+    if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
+        exit 0;
+    fi
+
+    git branch -m $branch_to_restore $normalized_branch
+}
+
+# restore $branch
+undo() {
+    local branch=$branch
+    case $branch in
+        $ARCHIVE*)
+            if ! ( branch_exists $branch ); then
+                echo "Branch $branch does not exist in the archives."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Specify full archived branch name for undo."
+            exit 1
+            ;;
+    esac
+
+    local normalized_branch=''
+    normalize_branch $branch normalized_branch
+
+    if ( branch_exists $normalized_branch ); then
+        echo "Branch $normalized_branch already exists, cannot undo."
+        exit 1
+    fi
+
+    local tag=''
+    make_tag $branch tag
+
+    if ! ( tag_exists $tag ); then
+        echo "Tag $tag does not exist, cannot undo."
+        exit 1
+    fi
+
+    echo -n "Undoing archive of branch $branch? [y/n] "
+    read confirm
+    if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
+        exit 0;
+    fi
+
+    git tag -d $tag
+    git branch -m $branch $normalized_branch
+}
+
+usage() {
+    echo "`basename $0` [--restore|--undo] [branch]"
+    echo "`basename $0` [branch] "
+    echo "      moves the current or given branch to $ARCHIVE"
+    echo "`basename $0` --restore [branch]"
+    echo "      restores the branch from the archive"
+    echo "`basename $0` --undo $ARCHIVE/<year>/branch"
+    echo "      restores the branch and deletes archived tags"
+    echo "      This will only work immediately after a archive operation"
+}
+
+restore=''
+undo=''
+
+while [ 1 ]; do
+    case $1 in
+        --restore)
+            restore=1
+            shift
+            ;;
+        --undo)
+            undo=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit
+            ;;
+        *)
+            break;
+            ;;
+    esac
+done
+
+if [ -n "$restore" ] && [ -n "$undo" ]; then
+    echo "Undo or restore? Pick one only."
+    exit 1
+fi
+
+branch=$1
+
+if test -z "$branch"; then
+    branch=`git symbolic-ref --short HEAD`
+fi
+
+if [ -n "$restore" ]; then
+    restore $branch
+elif [ -n "$undo" ]; then
+    undo $branch
+else
+    archive $branch
+fi
