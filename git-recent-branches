@@ -197,9 +197,14 @@ def print_commit(args, commit):
         logging.debug("Parsing error in config")
 
     opts.append(args.log_options)
-    print ""
-    print g.log(opts, commit.hexsha)
-    print ""
+
+    try:
+        print ""
+        print g.log(opts, commit.hexsha)
+        print ""
+    except git.exc.GitCommandError as e:
+        print e
+        sys.exit(1)
 
 def print_description(args, repo, reflog):
     config = repo.config_reader()
