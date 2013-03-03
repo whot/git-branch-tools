@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: latin-1
 #
 # git recent-branches shows a list of recently checked-out branches.
 # 
@@ -123,6 +124,12 @@ def is_remote(repo, s):
             return True
     return False
 
+def is_branch(repo, branch):
+    for b in repo.branches:
+        if b.name == branch:
+            return True
+    return False
+
 def is_headN(s):
     m = re.match(r"HEAD@{[0-9]+}", s)
     if m != None:
@@ -211,7 +218,9 @@ def walk_reflog(args, repo):
         l.reltime = reltime_to_now(*l.log.time)
         last_commit(repo, l)
 
-        print "{:<40} {:<20} last commit {}".format(l.to, l.reltime, l.reltime_commit)
+        is_alive = "" if is_branch(repo, l.to) else "†"
+
+        print "{:<40} {:<20} last commit {:<15} {}".format(l.to, l.reltime, l.reltime_commit, is_alive)
 
         if args.print_description:
             print_description(args, repo, l)
