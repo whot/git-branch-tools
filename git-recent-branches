@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# git recent-branches shows a list of recently checked-out branches.
+# 
 
 import git
 import re
