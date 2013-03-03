@@ -211,15 +211,11 @@ def print_description(args, repo, reflog):
 
     try:
         section = "branch \"%s\"" % reflog.to
-        desc = config.get_value(section, "description")
+        desc = config.get_value(section, "description", None)
         if desc:
             print ""
             for line in desc.split("\\n"):
                 print "    " + line
-    except ConfigParser.NoSectionError:
-        pass
-    except ConfigParser.NoOptionError:
-        pass
     except ConfigParser.ParsingError:
         logging.debug("Parsing error in config")
         pass
