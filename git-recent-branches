@@ -16,6 +16,9 @@ import ConfigParser
 class reflog(dict):
     pass
 
+def error(msg):
+    print >> sys.stderr, msg
+
 def reltime_to_now(t, tzoff):
     utc_sec = t - tzoff;
     now_utc_sec = time.time() - time.timezone
@@ -43,15 +46,40 @@ def reltime_to_now(t, tzoff):
 
     return "%d %s ago" % (count, word(count))
 
+def find_repo(args):
+    """Run up from $PWD until the end of the filesystem, trying to find the
+       git repo. This emulates what git does by default."""
+
+    try:
+        across_fs = (os.environ["GIT_DISCOVERY_ACROSS_FILESYSTEM"] != None)
+    except KeyError:
+        across_fs = False
+
+    cwd = os.getcwd()
+    dev = os.stat(cwd).st_dev
+    gitdir = os.path.join(cwd, ".git")
+    while not git.repo.fun.is_git_dir(gitdir):
+        oldcwd = cwd
+        cwd = os.path.abspath(os.path.join(cwd, os.pardir))
+        if cwd == oldcwd:
+            break;
+
+        gitdir = os.path.join(cwd, ".git")
+        stat = os.stat(cwd)
+        if not across_fs and stat.st_dev != dev:
+            error("Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).")
+            break;
+
+    return gitdir
 
 def init_repo(args):
     try:
         gitdir = os.environ["GIT_DIR"]
     except KeyError:
-        gitdir = os.getcwd() + "/.git"
+        gitdir = find_repo(args)
 
     if not git.repo.fun.is_git_dir(gitdir):
-        logging.critical("Not a git repository")
+        error("fatal: Not a git repository")
         sys.exit(1)
 
     repo = git.Repo.init(path = gitdir, mkdir = False)
