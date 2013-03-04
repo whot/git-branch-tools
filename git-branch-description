@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Show a bunch of information about a given branch.
+#
+
+if [ -t 1 ]; then
+    BOLD=`tput bold`
+    YELLOW=`tput setaf 3`
+    RESET=`tput sgr0`
+    COLS=`tput cols`
+else
+    COLS=80
+fi
+
+if [ "$1" == "--help" ]; then
+    echo "Usage: `basename $0` <branch> <upstream>"
+    exit 0
+fi
+
+branch=$1
+if [ -z "$branch" ]; then
+    branch=`git symbolic-ref --short HEAD`
+fi
+
+set -e
+git log -n1 $branch > /dev/null
+set +e
+
+first_date=`git reflog --format=format:%cd $branch | tail -n 2 | head -n 1`
+last_date=`git reflog -n 1 --format=format:%cd $branch`
+
+echo "Branch       $BOLD$branch$RESET"
+echo "Branched:    $YELLOW$first_date$RESET"
+echo "Last commit: $YELLOW$last_date$RESET"
+description=`git config branch.$branch.description`
+if [ -z "$description" ]; then
+    echo ""
+    echo "This branch has no description. Use:"
+    echo "    git branch --edit-description <branch>"
+else
+    echo ""
+    echo $description | fold -s
+fi
+echo ""
+
+upstream=$2
+if [ -z "$upstream" ]; then
+    upstream=`git symbolic-ref --short HEAD`
+fi
+if [ "$upstream" != "$branch" ]; then
+    printf '%*s' "${C:-$(($COLS/2-9))}" | tr ' ' =
+    printf "$YELLOW Unmerged commits$RESET "
+    printf '%*s\n' "${C:-$(($COLS/2-9))}" | tr ' ' =
+
+    mergebase=`git merge-base $branch $upstream`
+    branchsha=`git rev-list -n1 $branch`
+    upstreamsha=`git rev-list -n1 $upstream`
+
+    if [ "$mergebase" = "$upstreamsha" ] || [ "$mergebase" = "$branchsha" ]; then
+        echo ""
+        echo "Branch $branch already merged into $upstream"
+        echo ""
+    else
+        echo "Commits on $RESET$BOLD$branch$RESET not in $BOLD$upstream$RESET:"
+        git cherry -v $upstream $branch | grep "^+" | sed -e "s/^+ /$YELLOW/" | sed -e "s/ /$RESET /"
+        echo ""
+
+        echo "Commits on $BOLD$branch$RESET already merged to $BOLD$upstream$RESET:"
+        git cherry -v $upstream $branch | grep "^-" | sed -e "s/^- /$YELLOW/" | sed -e "s/ /$RESET /"
+        echo ""
+    fi
+fi
+
+printf '%*s' "${C:-$(($COLS/2-5))}" | tr ' ' =
+printf "${YELLOW} Activity $RESET"
+printf '%*s\n' "${C:-$(($COLS/2-5))}" | tr ' ' =
+
+git reflog -v -n40 --date=relative --grep-reflog="from $branch" --grep-reflog="to $branch" HEAD
+
+
+#git --no-pager reflog show --pretty --no-abbrev-commit $branch
