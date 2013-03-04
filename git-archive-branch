@@ -1,4 +1,8 @@
 #!/bin/bash -u
+#
+# git-archive-branch: move branchname to archive/2013/branchname and tag it
+# as archive-2013-03-04-branchname.
+#
 
 DEFAULT_ARCHIVE="archive"
 ARCHIVE=`git config branch-archive.directory`
