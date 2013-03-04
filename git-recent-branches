@@ -88,7 +88,7 @@ def init_repo(args):
         error("fatal: Not a git repository")
         sys.exit(1)
 
-    repo = git.Repo.init(path = gitdir, mkdir = False)
+    repo = git.Repo(path = gitdir)
     return repo
 
 def is_sha1sum(s):
