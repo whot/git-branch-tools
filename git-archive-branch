@@ -255,8 +255,9 @@ usage() {
 
 restore=''
 undo=''
+branch=''
 
-while [ 1 ]; do
+while [ $# -gt 1 ]; do
     case $1 in
         --restore)
             restore=1
@@ -271,7 +272,8 @@ while [ 1 ]; do
             exit
             ;;
         *)
-            break;
+            branch=$1
+            shift
             ;;
     esac
 done
@@ -280,8 +282,6 @@ if [ -n "$restore" ] && [ -n "$undo" ]; then
     echo "Undo or restore? Pick one only."
     exit 1
 fi
-
-branch=$1
 
 if test -z "$branch"; then
     branch=`git symbolic-ref --short HEAD`
