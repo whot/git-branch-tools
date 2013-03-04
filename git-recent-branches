@@ -56,11 +56,7 @@ def find_repo(args):
     """Run up from $PWD until the end of the filesystem, trying to find the
        git repo. This emulates what git does by default."""
 
-    try:
-        across_fs = (os.environ["GIT_DISCOVERY_ACROSS_FILESYSTEM"] != None)
-    except KeyError:
-        across_fs = False
-
+    across_fs = os.environ.get("GIT_DISCOVERY_ACROSS_FILESYSTEM", False)
     cwd = os.getcwd()
     dev = os.stat(cwd).st_dev
     gitdir = os.path.join(cwd, ".git")
@@ -79,11 +75,7 @@ def find_repo(args):
     return gitdir
 
 def init_repo(args):
-    try:
-        gitdir = os.environ["GIT_DIR"]
-    except KeyError:
-        gitdir = find_repo(args)
-
+    gitdir = os.environ.get("GIT_DIR", find_repo(args))
     if not git.repo.fun.is_git_dir(gitdir):
         error("fatal: Not a git repository")
         sys.exit(1)
