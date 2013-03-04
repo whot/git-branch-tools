@@ -7,8 +7,6 @@
 DEFAULT_ARCHIVE="archive"
 ARCHIVE=`git config branch-archive.directory`
 if [ -z "$ARCHIVE" ]; then
-    echo "git config branch-archive.directory is not set."
-    echo "Using default '$DEFAULT_ARCHIVE'."
     ARCHIVE=$DEFAULT_ARCHIVE
 fi
 
