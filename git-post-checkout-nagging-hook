@@ -8,11 +8,11 @@
 #
 # add list of branches you don't want to be nagged about in your git config
 #
-# [nag]
+# [branch-tools]
 #       no-description-branches = "master"
 
 
-whitelist=`git config --get-all nag.no-description-branches`
+whitelist=`git config --get-all branch-tools.no-description-branches`
 
 if [ -z "$whitelist" ]; then
     whitelist="master"

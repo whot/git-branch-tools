@@ -5,7 +5,7 @@
 #
 
 DEFAULT_ARCHIVE="archive"
-ARCHIVE=`git config branch-archive.directory`
+ARCHIVE=`git config branch-tools.archive`
 if [ -z "$ARCHIVE" ]; then
     ARCHIVE=$DEFAULT_ARCHIVE
 fi
