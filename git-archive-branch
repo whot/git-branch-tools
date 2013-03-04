@@ -120,7 +120,7 @@ archive() {
     $description
 
     Top commits:
-    `git log -n 10 --pretty=oneline $branch --`
+`git log -n 10 --pretty=oneline $branch --`
 
 EOF
 
