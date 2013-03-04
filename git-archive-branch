@@ -101,14 +101,25 @@ archive() {
         exit 0;
     fi
 
+    # add description unless branch is in no-description-branches
     description=`git config branch.$branch.description`
     if [ -z "$description" ]; then
-        echo "Archiving a branch without a description is not recommended."
-        echo "Use git branch --edit-description before archiving."
-        echo "Continue anyway? [y/n]"
-        read confirm
-        if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
-            exit 0;
+        no_desc_branches=`git config branch-tools.no-description-branches`
+        skip_desc=0
+        for ndb in $no_desc_branches; do
+            if [ "$ndb" = "$branch" ]; then
+                skip_desc=1
+                break
+            fi
+        done
+        if [ $skip_desc -eq 0 ]; then
+            echo "Archiving a branch without a description is not recommended."
+            echo "Use git branch --edit-description before archiving."
+            echo -n "Continue anyway? [y/n] "
+            read confirm
+            if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
+                exit 0;
+            fi
         fi
     fi
 
