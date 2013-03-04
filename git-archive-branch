@@ -103,10 +103,23 @@ archive() {
         exit 0;
     fi
 
+    description=`git config branch.$branch.description`
+    if [ -z "$description" ]; then
+        echo "Archiving a branch without a description is not recommended."
+        echo "Use git branch --edit-description before archiving."
+        echo "Continue anyway? [y/n]"
+        read confirm
+        if ! test "$confirm" = "y" && ! test "$confirm" = "Y"; then
+            exit 0;
+        fi
+    fi
+
     tmpfile=`mktemp`
     cat > $tmpfile << EOF
     Branch:   $branch. 
     Archived: `date`.
+
+    $description
 
     Top commits:
     `git log -n 10 --pretty=oneline $branch --`
