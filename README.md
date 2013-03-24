@@ -35,6 +35,11 @@ Example:
     for-keith                                     10 days ago          last commit 2 weeks ago
     memleak                                       13 days ago          last commit 2 weeks ago
 
+
+### Dependencies
+
+git-recent-branches requires GitPython: http://pythonhosted.org/GitPython/
+
 Better branch descriptions
 --------------------------
 Can't remember what branch "fix-race-condition" was? Me neither. That's what
