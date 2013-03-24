@@ -3,6 +3,10 @@
 # git-archive-branch: move branchname to archive/2013/branchname and tag it
 # as archive-2013-03-04-branchname.
 #
+# optional git-config hooks:
+#       branch-tools.archive ... prefix for branch names, default "archive"
+#       branch-tools.no-description-branches ... list of branches that do
+#                                                not need descriptions
 
 DEFAULT_ARCHIVE="archive"
 ARCHIVE=`git config branch-tools.archive`
