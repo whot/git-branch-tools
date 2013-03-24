@@ -1,18 +1,18 @@
 git-branch-tools
 ================
 
-A set of git tools to help manage branches better.
+A set of git tools to help manage branches better. Some of the tools use
+git-config hooks for local customization, have a look at the tools directly.
 
 Archiving branches 
 ------------------
-Some branches are not actively developed anymore but should still be
+Sometimes branches are not actively developed anymore but need to be
 preserved for posterity. These branches are clogging up the branch view.
 
     git archive-branch mybranch
 
 moves `mybranch` to `archive/2013/mybranch` and tags the current top commit
-with a message about the branch history.
-
+with a message containing bits of the branch history.
 
 Showing recent branches
 -----------------------
