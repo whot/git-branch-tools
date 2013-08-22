@@ -1,0 +1,35 @@
+#!/bin/bash
+# 
+# Create a patch set, save it in patches/patches-<date>-<baseref>
+# Points patches/latest to the last created directory, so it's easy to
+# git-send-email from there
+
+git rev-list $@ > /dev/null 
+if [ $? -ne 0 ]; then
+    echo "Failed to look up refs"
+    exit 1
+fi
+
+# git rev-list will take care of searching for the git-repo
+# so if we get here, we know we're inside a git repo.
+while ! [ -e ".git" ]; do
+    cd ..
+done
+
+revs="${@/\//\\}"
+date=`date +%Y%m%d%R`
+basedir=patches
+dir="patches-$date-$revs"
+tmplink="$basedir/latest"
+odir="$basedir/$dir"
+
+if [ -e "$odir" ]; then
+    echo "Directory $dir already exists. Oops."
+    exit 1
+fi
+
+mkdir -p "$odir"
+rm -f $tmplink
+ln -sf $dir $tmplink
+
+git format-patch -n -o $odir $@
