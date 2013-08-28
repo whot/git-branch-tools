@@ -270,7 +270,7 @@ restore=''
 undo=''
 branch=''
 
-while [ $# -gt 1 ]; do
+while [ $# -gt 0 ]; do
     case $1 in
         --restore)
             restore=1
