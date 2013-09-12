@@ -31,7 +31,7 @@ if [ -e "$odir" ]; then
     exit 1
 fi
 
-if [ -e "$pre_patchset_hook" ]; then
+if [ -x "$pre_patchset_hook" ]; then
     set -e
     ./$pre_patchset_hook
     set +e
@@ -43,7 +43,7 @@ ln -sf $dir $tmplink
 
 git format-patch -n -o $odir $@
 
-if [ -e "$post_patchset_hook" ]; then
+if [ -x "$post_patchset_hook" ]; then
     set -e
     ./$post_patchset_hook
     set +e
