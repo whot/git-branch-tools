@@ -53,4 +53,26 @@ And install the `git-post-checkout-nagging-hook` as your
 `.git/hooks/post-checkout` to make sure you get reminded to set the branch
 description.
 
+Creating patch sets
+-------------------
+A wrapper around git-format-patch, that drops the patches into a directory
+named after the patch set and date.
+
+    $> git patch-set origin/master..HEAD~2
+    $> ls patches
+    patches/patches-2013-08-30-10:47-origin\master..HEAD~2/
+    patches/latest -> patches/patches-2013-08-30-10:47-origin\master..HEAD~2/
+ 
+patches/latest always links to the last generated patcheset.
+
+Note: git-patch-set will run the pre-push hook (if any). Ideally, you'll
+have a pre-push hook that runs make check, so you never send out patches
+that haven't at least be built and tested.
+
+    $> cat .git/hooks/pre-push
+    cat ~/code/libevdev/.git/hooks/pre-push
+    #!/bin/bash
+    set -e
+    echo "running make check"
+    make check
 
