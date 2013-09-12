@@ -19,12 +19,6 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-if [ -e "$pre_patchset_hook" ]; then
-    set -e
-    ./$pre_patchset_hook
-    set +e
-fi
-
 revs="${@/\//\\}"
 date=`date +%Y%m%d%H%M`
 basedir=patches
@@ -35,6 +29,12 @@ odir="$basedir/$dir"
 if [ -e "$odir" ]; then
     echo "Directory $dir already exists. Oops."
     exit 1
+fi
+
+if [ -e "$pre_patchset_hook" ]; then
+    set -e
+    ./$pre_patchset_hook
+    set +e
 fi
 
 mkdir -p "$odir"
