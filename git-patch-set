@@ -16,6 +16,15 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
+# git-format-patch is akin to sending a pull request, which requires pushing
+# somewhere. So run the pre-push hook, which should at least run make check
+# or whatever.
+# FIXME: should use a pre-format-hook here instead
+pre_push_hook=.git/hooks/pre-push
+if [ -e "$pre_push_hook" ]; then
+    ./$pre_push_hook
+fi
+
 revs="${@/\//\\}"
 date=`date +%Y%m%d%R`
 basedir=patches
