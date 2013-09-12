@@ -4,6 +4,9 @@
 # Points patches/latest to the last created directory, so it's easy to
 # git-send-email from there
 
+pre_patchset_hook=.git/hooks/pre-patch-set
+post_patchset_hook=.git/hooks/post-patch-set
+
 git rev-list $@ > /dev/null 
 if [ $? -ne 0 ]; then
     echo "Failed to look up refs"
@@ -16,13 +19,9 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-# git-format-patch is akin to sending a pull request, which requires pushing
-# somewhere. So run the pre-push hook, which should at least run make check
-# or whatever.
-pre_push_hook=.git/hooks/pre-patch-set
-if [ -e "$pre_push_hook" ]; then
+if [ -e "$pre_patchset_hook" ]; then
     set -e
-    ./$pre_push_hook
+    ./$pre_patchset_hook
     set +e
 fi
 
@@ -43,3 +42,9 @@ rm -f $tmplink
 ln -sf $dir $tmplink
 
 git format-patch -n -o $odir $@
+
+if [ -e "$post_patchset_hook" ]; then
+    set -e
+    ./$post_patchset_hook
+    set +e
+fi
