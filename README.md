@@ -76,3 +76,20 @@ that haven't at least be built and tested.
     echo "running make check"
     make check
 
+Splitting commits
+-----------------
+During rebase, when you realise that a commit needs to be broken up into
+two.
+   $> git rebase -i
+   # mark commit to split as "edit"
+   $> git split-commit
+
+The tool now calls git add -p, letting you add the hunks needed (and/or missing
+files). Finish up, it will re-commit with the same message and drop you
+back to the shell to finish up and continue. Alternatively,
+
+   $> git split-commit --after
+will drop you into a shell immediately, letting you git add and commit
+anything you want committed _before_ the current commit. Exiting the shell
+will commit the rest.
+

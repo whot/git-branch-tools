@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Split the last commit into multiple patches. Usually used during
+# re-basing.
+#
+# 
+
+usage() {
+    echo "Usage: $(basename $0) [--before|--after]"
+    echo " --before ... re-commit the patch before any leftovers (default)"
+    echo " --after  ... commit everything else first, then the leftover"
+}
+
+
+mode="before"
+case "$1" in
+    --after)
+        mode="after"
+        ;;
+    --before)
+        mode="before"
+        ;;
+    --help)
+        usage
+        exit 0
+        ;;
+    "")
+        ;;
+    *)
+        echo "Invalid argument: $1"
+        usage
+        exit 1
+        ;;
+esac
+
+git diff > /dev/null
+if [ $? -ne 0 ]; then
+    echo "Unstaged changes, please commit them first"
+    exit 1
+fi
+
+sha=$(git rev-list -n 1 HEAD)
+
+git reset HEAD~1
+if [ $mode = "before" ]; then
+    git add -p
+
+    if [ $? -ne 0 ]; then
+        echo "---------------------------------------------"
+        echo "git add -p failed, dropping you into a shell."
+        echo "Exiting the shell will commit"
+        $SHELL
+    fi
+
+    echo -n "Need to add any files? [y/N] "
+    read addfiles
+
+    if [ "$addfiles" = "y" -o "$addfiles" = "Y" ]; then
+        echo "------------------------------"
+        echo "Dropping you into a shell now."
+        echo "Exiting the shell will commit."
+        $SHELL
+    fi
+
+    git commit -c $sha
+
+    echo "--------------------------------------"
+    echo "Add remaining hunks now. To abort, run"
+    echo "    git reset --hard $sha"
+
+else # mode == after
+    echo "---------------------------------------------------"
+    echo "Starting a shell. Commit everything unrelated first"
+    echo "Exiting the shell will re-commit"
+    $SHELL
+    git commit -ac $sha
+
+    echo -n "Happy with the split? N will reset [Y/n] "
+    read happy
+    if [ "$happy" = "n" -o "$happy" = "N" ]; then
+        git reset --hard $sha
+    fi
+fi
+
+
+
