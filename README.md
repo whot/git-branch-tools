@@ -93,3 +93,20 @@ will drop you into a shell immediately, letting you git add and commit
 anything you want committed _before_ the current commit. Exiting the shell
 will commit the rest.
 
+Squashing commits
+-----------------
+git config's rebase.autosquash enables automatic re-ordering and squashing
+of commits starting with "squash!" or "fixup!", followed by a subject line
+that matches an earlier commit.
+
+git-squash is a wrapper script around that to make it easier to remember.
+   $> git add myfile yourfile
+   $> git squash
+   [1] this is the most recent commit
+   [2] previos commit
+   [3] some other commit
+   [4] a commit message
+   Number to squash in: 3
+
+Arguments passed to git-squash will be passed to git-commit.
+
