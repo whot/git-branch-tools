@@ -110,3 +110,16 @@ git-squash is a wrapper script around that to make it easier to remember.
 
 Arguments passed to git-squash will be passed to git-commit.
 
+
+Adding tags to commit messages
+------------------------------
+Some projects request Reviewed-by, Signed-off-by or bugzilla references to
+be adeed to a commit message. git-add-tag is a script to add these to a set
+of commit messages.
+
+   $> git add-tag HEAD~6..
+
+This will open up an editor window. Write the line you need to add to the
+commit range and exit. The line will be appended to all commits in the
+range.
+   
