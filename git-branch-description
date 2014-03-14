@@ -12,7 +12,7 @@ else
     COLS=80
 fi
 
-if [ "$1" == "--help" ]; then
+if [ "$1" = "--help" ]; then
     echo "Usage: `basename $0` <branch> <upstream>"
     exit 0
 fi
