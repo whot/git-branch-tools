@@ -31,17 +31,20 @@ esac
 
 declare -a ref=()
 
+IFS='
+'
+refs=($(git log --format="%s" -n $nrefs))
+
 i=0
-while read ref; do
+for ref in "${refs[@]}"; do
     i=$(($i + 1))
-    refs[$i]="$ref"
     echo "[$i] $ref"
-done < <(git log --format="%s" -n $nrefs)
+done
 
 echo -n "Number to squash in: "
 read r
 
-ref=${refs[$r]}
+ref=${refs[$r-1]}
 
 git commit -m "fixup! $ref" $@
 
