@@ -126,3 +126,13 @@ This will open up an editor window. Write the line you need to add to the
 commit range and exit. The line will be appended to all commits in the
 range.
    
+
+Testing commits in sequence
+---------------------------
+After merging a set of patches, sometimes it's necessary to make sure that
+each patch fulfills certain conditions (e.g. pass a test suite).
+
+   $> git for-each origin/master.. make check
+
+Runs make check on each commit from origin/master to HEAD and prints a log.
+

@@ -1,0 +1,224 @@
+#!/bin/bash
+#
+# git for-each <commit>... command ...
+#
+# For each commit, run the command and collect the exit code.
+# Works somewhat similar to git-bisect.
+#
+# Uses a temporary branch FOREACH that is deleted on success.
+
+set -e
+
+usage() {
+        echo "usage: `basename $0` [--ignore-error] <commit>... [command] [arg arg ...]"
+        echo "       `basename $0` --abort|--continue|--skip|--show-log"
+        echo "       `basename $0` --help"
+        echo ""
+        echo "Check out each commit in the given range and runs the"
+        echo "given command. If the command exists with a non-zero exit code,"
+        echo "stop and drop back to the shell, otherwise continue"
+        echo "with the next commit."
+        echo ""
+        echo "Options"
+        echo "   --abort        ... clean up from a previous for-each run"
+        echo "   --continue     ... continue from an interrupted run, starting"
+        echo "                      with the current commit"
+        echo "   --ignore-error ... ignore non-zero exit code from command"
+        echo "                      and continue anyway"
+        echo "   --show-log     ... show the current log"
+        echo "   --skip         ... skip this commit, continue with the next"
+}
+
+cleanup() {
+    set +e
+    branch=`git rev-parse --abbrev-ref HEAD`
+    if test "$branch" = "FOREACH"; then
+        prev_branch="-"
+        if test -e .git/FOREACH_START; then
+            prev_branch=`cat .git/FOREACH_START`
+        fi
+        git checkout --quiet $prev_branch
+    fi
+    git branch --quiet -D FOREACH > /dev/null 2>&1
+    rm -f .git/FOREACH_START
+    rm -f .git/FOREACH_CMD
+    rm -f .git/FOREACH_LOG
+    set -e
+}
+
+exit_if_local_changes() {
+    if ! git diff-files --quiet; then
+        echo >&2 "Your index contains uncommitted changes, aborting."
+        exit 1
+    fi
+}
+
+check_in_progress() {
+    branch=`git rev-parse --abbrev-ref HEAD`
+    if test "$branch" != "FOREACH" ||
+       ! test -e .git/FOREACH_START ||
+       ! test -e .git/FOREACH_CMD ||
+       ! test -e .git/FOREACH_LOG; then
+        echo >&2 "No foreach in progress?"
+        exit 1
+    fi
+}
+
+show() {
+    check_in_progress
+
+    cat .git/FOREACH_LOG
+    exit 0
+}
+
+cont() {
+    check_in_progress
+
+    command=`cat .git/FOREACH_CMD`
+    refspec=`head -n 1 .git/FOREACH_LOG`
+
+    if test "x$command" = "x" ||
+       test "x$refspec" = "x"; then
+        echo >&2 "Invalid or corrupted for-each files. Aborting"
+        exit 1
+    fi
+
+    revlist=`git rev-list --reverse $refspec ^HEAD~`
+
+    process_revlist $revlist
+}
+
+process_revlist() {
+    if test 0$skip -ne 0; then
+        echo "# skip: `git log -n1 --abbrev-commit --format=oneline`" >> .git/FOREACH_LOG
+        shift $skip
+    fi
+
+    echo "# continued" >> .git/FOREACH_LOG
+
+    local _revlist=$@
+    for rev in ${_revlist}; do
+        git reset --quiet --hard $rev
+        echo "Processing commit `git log -n1 --abbrev-commit --format=oneline`"
+        set +e
+        ($command)
+        exitcode=$?
+        set -e
+        if test $exitcode -eq 0; then
+            echo -n "success: " >> .git/FOREACH_LOG
+        else
+            rc=1
+            echo -n "fail $exitcode: " >> .git/FOREACH_LOG
+        fi
+        git log -n1 --abbrev-commit --format=oneline >> .git/FOREACH_LOG
+        if test 0$rc -ne 0 -a 0$ignore_errors -eq 0; then
+            exit $rc
+        fi
+    done
+
+    echo "`basename $0` finished. Log:"
+    echo -n "commit range: "
+
+    cat .git/FOREACH_LOG
+
+    cleanup
+}
+
+sigint () {
+    kill 0 -SINT
+    exit 1
+}
+
+abort=0
+cont=0
+show=0
+skip=0
+
+while true; do
+    case $1 in
+        --abort)
+            abort=1
+            break
+            ;;
+        --continue)
+            cont=1
+            ;;
+        --skip)
+            skip=1
+            ;;
+        --ignore-errors)
+            ignore_errors=1
+            ;;
+        --show-log)
+            show=1
+            ;;
+        *)
+            break
+            ;;
+    esac;
+    shift
+done
+
+trap 'sigint' INT
+
+modes=$((0$abort + 0$cont + 0$skip + 0$show))
+if test $modes -gt 1; then
+    usage
+    exit 1
+fi
+
+if test 0$show -ne 0; then
+    show
+elif test 0$abort -ne 0; then
+    cleanup
+    exit 0
+elif test 0$cont -ne 0 -o 0$skip -ne 0; then
+    cont
+    exit 0
+fi
+
+if test $# -lt 2; then
+    usage
+    exit 1
+fi
+
+exit_if_local_changes
+
+# git diff will take care of searching for the git-repo
+# so if we get here, we know we're inside a git repo.
+while ! test -e .git; do
+    cd ..
+done
+
+if test -e ".git/FOREACH_START" ||
+   test -e ".git/FOREACH_CMD" ||
+   test -e ".git/FOREACH_LOG"; then
+    echo >&2 "Leftovers from previous for-each detected. aborting."
+    exit 1
+fi
+
+refspec=$1
+
+shift
+command=""
+while test $# -gt 0; do
+    arg=$1
+    command="$command $arg"
+    shift
+done
+
+ref_start=`git rev-list --abbrev-commit $refspec | tail -n 1`
+ref_end=`git rev-list --max-count=1 --abbrev-commit $refspec`
+revlist=`git rev-list --reverse $refspec`
+
+rc=0
+# Note: we need to start at ref_start~, otherwise the revlist generated on
+# continue/skip doesn't include the first real commit we care about
+echo "$ref_start~..$ref_end" > .git/FOREACH_LOG
+echo "$command" > .git/FOREACH_CMD
+git rev-parse --abbrev-ref HEAD > .git/FOREACH_START
+git checkout --quiet -b FOREACH
+
+process_revlist $revlist
+
+exit $rc
