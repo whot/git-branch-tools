@@ -8,7 +8,7 @@
 #       branch-tools.no-description-branches ... list of branches that do
 #                                                not need descriptions
 
-DEFAULT_ARCHIVE="archive"
+readonly DEFAULT_ARCHIVE="archive"
 ARCHIVE=`git config branch-tools.archive`
 if [ -z "$ARCHIVE" ]; then
     ARCHIVE=$DEFAULT_ARCHIVE
@@ -25,25 +25,25 @@ normalize_branch() {
 
 # return 0 if $branch exists, or non-zero otherwise
 branch_exists() {
-    local branch=$1
+    local readonly branch=$1
     git log -n1 $branch -- > /dev/null 2>&1
     [[ $? -eq 0 ]] && return 0 || return 1
 }
 
 # return 0 if $tag exists, or non-zero otherwise
 tag_exists() {
-    local tag=$1
+    local readonly tag=$1
     git log -n1 $tag -- > /dev/null 2>&1
     [[ $? -eq 0 ]] && return 0 || return 1
 }
 
 # Create archived branch name from $branch and store in $2
 make_archive_branch_name() {
-    local branch=$1
+    local readonly branch=$1
     local __archived_branch=$2
 
     local normalized_branch=''
-    local year=`date +%Y`
+    local readonly year=`date +%Y`
 
     normalize_branch $branch normalized_branch
 
@@ -54,8 +54,8 @@ make_archive_branch_name() {
 
 # return tag name for $branch and store it in $2
 make_tag() {
-    local branch=$1
-    local date=`date +%Y-%m-%d`
+    local readonly branch=$1
+    local readonly date=`date +%Y-%m-%d`
     local normalized_branch=''
     local __tag=$2
 
@@ -68,7 +68,7 @@ make_tag() {
 
 # Archive $branch to $ARCHIVES and tag last commit
 archive() {
-    local branch=$1
+    local readonly branch=$1
     local archive_branch=''
     local tag=''
 
@@ -106,10 +106,10 @@ archive() {
     fi
 
     # add description unless branch is in no-description-branches
-    description=`git config branch.$branch.description`
+    local description=`git config branch.$branch.description`
     if [ -z "$description" ]; then
-        no_desc_branches=`git config branch-tools.no-description-branches`
-        skip_desc=0
+        local readonly no_desc_branches=`git config branch-tools.no-description-branches`
+        local skip_desc=0
         for ndb in $no_desc_branches; do
             if [ "$ndb" = "$branch" ]; then
                 skip_desc=1
@@ -127,7 +127,7 @@ archive() {
         fi
     fi
 
-    tmpfile=`mktemp`
+    local readonly tmpfile=`mktemp`
     cat > $tmpfile << EOF
     Branch:   $branch. 
     Archived: `date`.
@@ -256,14 +256,19 @@ undo() {
 }
 
 usage() {
-    echo "`basename $0` [--restore|--undo] [branch]"
-    echo "`basename $0` [branch] "
-    echo "      moves the current or given branch to $ARCHIVE"
-    echo "`basename $0` --restore [branch]"
-    echo "      restores the branch from the archive"
-    echo "`basename $0` --undo $ARCHIVE/<year>/branch"
-    echo "      restores the branch and deletes archived tags"
-    echo "      This will only work immediately after a archive operation"
+    cat <<- EOF
+	`basename $0` [--restore|--undo] [branch]
+
+	`basename $0` [branch]
+	      moves the current or given branch to $ARCHIVE
+
+	`basename $0` --restore [branch]
+	      restores the branch from the archive
+
+	`basename $0` --undo $ARCHIVE/<year>/branch
+	      restores the branch and deletes archived tags
+	      This will only work immediately after a archive operation
+	EOF
 }
 
 restore=''

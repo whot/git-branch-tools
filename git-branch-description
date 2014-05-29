@@ -1,15 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Show a bunch of information about a given branch.
 #
 
 if [ -t 1 ]; then
-    BOLD=`tput bold`
-    YELLOW=`tput setaf 3`
-    RESET=`tput sgr0`
-    COLS=`tput cols`
+    readonly BOLD=`tput bold`
+    readonly YELLOW=`tput setaf 3`
+    readonly RESET=`tput sgr0`
+    readonly COLS=`tput cols`
 else
-    COLS=80
+    readonly COLS=80
 fi
 
 if [ "$1" = "--help" ]; then
@@ -26,13 +26,13 @@ set -e
 git log -n1 $branch > /dev/null
 set +e
 
-first_date=`git reflog --format=format:%cd $branch | tail -n 2 | head -n 1`
-last_date=`git reflog -n 1 --format=format:%cd $branch`
+readonly first_date=`git reflog --format=format:%cd $branch | tail -n 2 | head -n 1`
+readonly last_date=`git reflog -n 1 --format=format:%cd $branch`
 
 echo "Branch       $BOLD$branch$RESET"
 echo "Branched:    $YELLOW$first_date$RESET"
 echo "Last commit: $YELLOW$last_date$RESET"
-description=`git config branch.$branch.description`
+readonly description=`git config branch.$branch.description`
 if [ -z "$description" ]; then
     echo ""
     echo "This branch has no description. Use:"
@@ -52,9 +52,9 @@ if [ "$upstream" != "$branch" ]; then
     printf "$YELLOW Unmerged commits$RESET "
     printf '%*s\n' "${C:-$(($COLS/2-9))}" | tr ' ' =
 
-    mergebase=`git merge-base $branch $upstream`
-    branchsha=`git rev-list -n1 $branch`
-    upstreamsha=`git rev-list -n1 $upstream`
+    readonly mergebase=`git merge-base $branch $upstream`
+    readonly branchsha=`git rev-list -n1 $branch`
+    readonly upstreamsha=`git rev-list -n1 $upstream`
 
     if [ "$mergebase" = "$upstreamsha" ] || [ "$mergebase" = "$branchsha" ]; then
         echo ""

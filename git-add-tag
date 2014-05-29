@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 # fake some name that looks like a git commit to vim
 if [ $# -ne 1 ]; then
     echo  "usage: $0 <commit range>"
 fi
 
-FAKE_GIT_DIR=`mktemp -d`
-FILE=$FAKE_GIT_DIR/.git/COMMIT_EDITMSG
+readonly FAKE_GIT_DIR=`mktemp -d`
+readonly FILE=$FAKE_GIT_DIR/.git/COMMIT_EDITMSG
 mkdir -p $FAKE_GIT_DIR/.git/
 
 $EDITOR $FILE

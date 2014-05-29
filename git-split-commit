@@ -6,11 +6,12 @@
 # 
 
 usage() {
-    echo "Usage: $(basename $0) [--before|--after]"
-    echo " --before ... re-commit the patch before any leftovers (default)"
-    echo " --after  ... commit everything else first, then the leftover"
+    cat <<- EOF
+	Usage: $(basename $0) [--before|--after]
+	    --before ... re-commit the patch before any leftovers (default)
+	    --after  ... commit everything else first, then the leftover
+	EOF
 }
-
 
 mode="before"
 case "$1" in
@@ -39,7 +40,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-sha=$(git rev-list -n 1 HEAD)
+readonly sha=$(git rev-list -n 1 HEAD)
 
 git reset HEAD~1
 if [ $mode = "before" ]; then

@@ -4,8 +4,8 @@
 # Points patches/latest to the last created directory, so it's easy to
 # git-send-email from there
 
-pre_patchset_hook=.git/hooks/pre-patch-set
-post_patchset_hook=.git/hooks/post-patch-set
+readonly pre_patchset_hook=.git/hooks/pre-patch-set
+readonly post_patchset_hook=.git/hooks/post-patch-set
 
 git rev-list $@ > /dev/null 
 if [ $? -ne 0 ]; then
@@ -19,12 +19,12 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-revs="${@/\//\\}"
-date=`date +%Y%m%d%H%M`
-basedir=patches
-dir="patches-$date-$revs"
-tmplink="$basedir/latest"
-odir="$basedir/$dir"
+readonly revs="${@/\//\\}"
+readonly date=`date +%Y%m%d%H%M`
+readonly basedir=patches
+readonly dir="patches-$date-$revs"
+readonly tmplink="$basedir/latest"
+readonly odir="$basedir/$dir"
 
 if [ -e "$odir" ]; then
     echo "Directory $dir already exists. Oops."
