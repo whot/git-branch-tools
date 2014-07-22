@@ -19,7 +19,7 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-readonly revs="${@/\//\\}"
+readonly revs="${@/\//:}"
 readonly date=`date +%Y%m%d%H%M`
 readonly basedir=patches
 readonly dir="patches-$date-$revs"
