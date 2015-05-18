@@ -1,0 +1,42 @@
+#!/bin/bash
+usage() {
+        echo "usage: `basename $0` <subcommand> [arg ...]"
+        echo ""
+        echo "Executes 'git <subcommand> [arg ...]' bracketed by 'git stash' and"
+        echo "'git stash pop'. If the subcommand fails, exits with its return code"
+        echo "(without running 'git stash pop')."
+        echo ""
+        echo "Example:"
+        echo ""
+        echo "    $ git pull -r"
+        echo "    Cannot pull with rebase: You have unstaged changes."
+        echo "    Please commit or stash them."
+        echo ""
+        echo "    $ git stashed pull -r"
+        echo "    Saved working directory and index state WIP on master: ..."
+        echo "    [ ... git pull -r output ... ]"
+        echo "    Dropped refs/stash@{0} (...)"
+}
+
+if [ $# -eq 0 ]; then
+        usage
+        exit 1
+fi
+
+git status --porcelain | grep -qv '^??'
+dirty_tree=$?
+
+if [ $dirty_tree -eq 1 ]; then
+        git "$@" || exit $?
+else
+        git stash save "stashed while running $@" || exit $?
+
+        git "$@"
+        rc=$?
+        if [ $rc -eq 0 ]; then
+                git stash pop || exit $?
+        else
+                echo "git $1 failed; resolve the issue then run 'git stash pop' to restore your tree."
+                exit $rc
+        fi
+fi
