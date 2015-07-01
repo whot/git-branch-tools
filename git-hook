@@ -1,0 +1,53 @@
+#!/bin/bash
+
+usage() {
+    echo "`basename $0` enable|disable <hook>"
+}
+
+if [[ $# < 1 ]]; then
+    usage
+    exit 1
+fi
+
+cmd=$1
+hook=$2
+case $cmd in
+    enable)
+        ;;
+    disable)
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
+
+git rev-list HEAD~..HEAD > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# git rev-list will take care of searching for the git-repo
+# so if we get here, we know we're inside a git repo.
+while ! [ -e ".git" ]; do
+    cd ..
+done
+
+hook=.git/hooks/$hook
+if ! [[ -e "$hook" ]]; then
+    echo "Hook $hook does not exist"
+    exit 1
+fi
+
+case $cmd in
+    enable)
+        mv $hook.disabled $hook
+        chmod +x $hook
+        ;;
+    disable)
+        chmod -x $hook
+        mv $hook $hook.disabled
+        ;;
+    *)
+        ;;
+esac
