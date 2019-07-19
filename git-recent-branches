@@ -270,7 +270,7 @@ if __name__ == "__main__":
                         help="Show top commit on each branch. Uses git log, use git log options for formatting the output")
     parser.add_argument("--limit",
                         type=int,
-                        default=-1,
+                        default=20,
                         help="Limit output to N branches")
     parser.add_argument("log_options",
                         nargs="*",
