@@ -52,7 +52,7 @@ def reltime_to_now(t, tzoff):
 
     return "%d %s ago" % (count, word(count))
 
-def find_repo(args):
+def find_repo():
     """Run up from $PWD until the end of the filesystem, trying to find the
        git repo. This emulates what git does by default."""
 
@@ -74,8 +74,8 @@ def find_repo(args):
 
     return gitdir
 
-def init_repo(args):
-    gitdir = os.environ.get("GIT_DIR", find_repo(args))
+def init_repo():
+    gitdir = os.environ.get("GIT_DIR", find_repo())
     if not git.repo.fun.is_git_dir(gitdir):
         error("fatal: Not a git repository")
         sys.exit(1)
@@ -280,5 +280,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args(sys.argv[1:])
 
-    repo = init_repo(args)
+    repo = init_repo()
     walk_reflog(args, repo)
