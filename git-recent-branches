@@ -247,8 +247,16 @@ def walk_reflog(args, repo):
         if args.limit > 0 and n >= args.limit:
             break
 
+def get_configured_limit(repo):
+    config = repo.config_reader()
+    value = config.get_value("recent-branches", "limit", 20)
+    return value
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)
+
+    repo = init_repo()
+    default_limit = get_configured_limit(repo)
 
     parser = argparse.ArgumentParser(description="Show a list of recently used branches",
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -270,7 +278,7 @@ if __name__ == "__main__":
                         help="Show top commit on each branch. Uses git log, use git log options for formatting the output")
     parser.add_argument("--limit",
                         type=int,
-                        default=20,
+                        default=default_limit,
                         help="Limit output to N branches")
     parser.add_argument("log_options",
                         nargs="*",
@@ -280,5 +288,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args(sys.argv[1:])
 
-    repo = init_repo()
     walk_reflog(args, repo)
