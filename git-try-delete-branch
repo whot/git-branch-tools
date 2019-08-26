@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# github always rebases even for FF so you can't easily delete a branch
+# without it complaining about being non merged.
+#
+
+branch="$1"
+test -z "$branch" && echo "Usage: `basename $0` <branchname>" && exit 1
+
+sha=`git log -n1 --pretty=format:%H`
+
+set -e
+git log -n1 --format=short
+git checkout --quiet "$branch"
+set +e
+git rebase --quiet $sha
+if [[ $? -ne 0 ]]; then
+    git rebase --abort
+    git checkout -
+    echo "Failed to rebase, aborting"
+    exit 1
+fi
+set -e
+git checkout -
+git branch -d "$branch"
