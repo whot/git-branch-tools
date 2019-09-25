@@ -7,7 +7,9 @@
 readonly pre_patchset_hook=.git/hooks/pre-patch-set
 readonly post_patchset_hook=.git/hooks/post-patch-set
 
-git rev-list $@ > /dev/null 
+range=${!#}
+
+git rev-list $range > /dev/null
 if [ $? -ne 0 ]; then
     echo "Failed to look up refs"
     exit 1
@@ -19,7 +21,7 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-readonly revs="${@/\//:}"
+readonly revs="${range/\//:}"
 readonly date=`date +%Y%m%d%H%M`
 readonly basedir=patches
 readonly dir="patches-$date-$revs"
@@ -31,9 +33,12 @@ if [ -e "$odir" ]; then
     exit 1
 fi
 
+readonly first=`git rev-list --reverse $range | head -n 1`
+readonly last=`git rev-list -n 1 $range`
+
 if [ -x "$pre_patchset_hook" ]; then
     set -e
-    ./$pre_patchset_hook
+    ./$pre_patchset_hook $first $last
     set +e
 fi
 
@@ -41,10 +46,10 @@ mkdir -p "$odir"
 rm -f $tmplink
 ln -sf $dir $tmplink
 
-git format-patch -n -o $odir $@
+git format-patch -M -n -o $odir "$@"
 
 if [ -x "$post_patchset_hook" ]; then
     set -e
-    ./$post_patchset_hook
+    ./$post_patchset_hook $first $last
     set +e
 fi
