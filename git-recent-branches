@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: latin-1
 #
 # git recent-branches shows a list of recently checked-out branches.
@@ -12,7 +12,7 @@ import time
 import logging
 import gettext
 import argparse
-import ConfigParser
+import configparser
 import termcolor
 
 class reflog(dict):
@@ -23,7 +23,7 @@ def git_config_noauto(setting):
     return setting is True or (setting  == "auto" and sys.stdout.isatty())
 
 def error(msg):
-    print >> sys.stderr, msg
+    print(msg, file=sys.stderr)
 
 def reltime_to_now(t, tzoff):
     utc_sec = t - tzoff;
@@ -147,7 +147,7 @@ def filter_logs(repo, log_entries):
         log.to = m.group(2)
         log.log = l
 
-        if uniq.has_key(log.to):
+        if log.to in uniq:
             continue
         uniq[log.to] = 1
 
@@ -186,17 +186,17 @@ def print_commit(args, commit):
         config = repo.config_reader()
         if git_config_noauto(config.get_value("color", "pager", sys.stdout.isatty())):
             opts.append(["--color=always"])
-    except  ConfigParser.ParsingError:
+    except  configparser.ParsingError:
         logging.debug("Parsing error in config")
 
     opts.append(args.log_options)
 
     try:
-        print ""
-        print g.log(opts, commit.hexsha)
-        print ""
+        print("")
+        print(g.log(opts, commit.hexsha))
+        print("")
     except git.exc.GitCommandError as e:
-        print e
+        print(e)
         sys.exit(1)
 
 def print_description(args, repo, reflog):
@@ -206,10 +206,10 @@ def print_description(args, repo, reflog):
         section = "branch \"%s\"" % reflog.to
         desc = config.get_value(section, "description", None)
         if desc:
-            print ""
+            print("")
             for line in desc.split("\\n"):
-                print "    " + line
-    except ConfigParser.ParsingError:
+                print("    " + line)
+    except configparser.ParsingError:
         logging.debug("Parsing error in config")
         pass
 
@@ -232,10 +232,10 @@ def walk_reflog(args, repo):
         try:
             if git_config_noauto(config.get_value("color", "branch", sys.stdout.isatty())):
                     branch = termcolor.colored(branch, "yellow")
-        except ConfigParser.ParsingError:
+        except configparser.ParsingError:
             logging.debug("Parsing error in config")
 
-        print "{:<45} {:<20} last commit {:<15} {}".format(branch, l.reltime, l.reltime_commit, is_alive)
+        print("{:<45} {:<20} last commit {:<15} {}".format(branch, l.reltime, l.reltime_commit, is_alive))
 
         if args.print_description:
             print_description(args, repo, l)
