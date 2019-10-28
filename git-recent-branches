@@ -128,12 +128,6 @@ def is_remote(repo, s):
             return True
     return False
 
-def is_branch(repo, branch):
-    for b in repo.branches:
-        if b.name == branch:
-            return True
-    return False
-
 def is_headN(s):
     m = re.match(r"HEAD@{[0-9]+}", s)
     if m != None:
@@ -241,8 +235,6 @@ def walk_reflog(args, repo):
         l.reltime = reltime_to_now(*l.log.time)
         last_commit(repo, l)
 
-        is_alive = "" if is_branch(repo, l.to) else "†"
-
         branch = l.to
         try:
             if git_config_noauto(config.get_value("color", "branch", sys.stdout.isatty())):
@@ -250,7 +242,7 @@ def walk_reflog(args, repo):
         except configparser.ParsingError:
             logging.debug("Parsing error in config")
 
-        print("{:<45} {:<20} last commit {:<15} {}".format(branch, l.reltime, l.reltime_commit, is_alive))
+        print("{:<45} {:<20} last commit {:<15}".format(branch, l.reltime, l.reltime_commit))
 
         if args.print_description:
             print_description(args, repo, l)
@@ -278,7 +270,7 @@ if __name__ == "__main__":
                                             " * if it is a remote branch\n"
                                             " * if it is a HEAD@{3}-like reflog\n"
                                             " * if it is a tag name\n"
-                                            "Branches that do not exist anymore in the local repository are marked with a †")
+                                            "Branches that do not exist anymore in the local repository are not shown")
     parser.add_argument("--print-description",
                         action="store_true",
                         default=False,
