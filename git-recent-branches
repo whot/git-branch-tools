@@ -81,6 +81,7 @@ def init_repo():
         sys.exit(1)
 
     repo = git.Repo(path = gitdir)
+    repo.branches_set = { head.name for head in repo.branches }
     return repo
 
 def is_sha1sum(s):
@@ -110,6 +111,12 @@ def is_sha1sum_short(s):
 def is_tag(repo, s):
     if s in repo.tags:
         logging.debug("%s is a tag" % s)
+        return True
+    return False
+
+def is_removed(repo, s):
+    if s not in repo.branches_set:
+        logging.debug("%s is removed" % s)
         return True
     return False
 
@@ -165,6 +172,9 @@ def filter_logs(repo, log_entries):
             continue
 
         if is_tag(repo, log.to):
+            continue
+
+        if is_removed(repo, log.to):
             continue
 
         flogs.append(log)
