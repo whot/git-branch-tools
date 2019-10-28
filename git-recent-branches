@@ -141,9 +141,10 @@ def is_headN(s):
     return m != None
 
 # Drop direct checkouts, tag names, etc.
-def filter_logs(repo, log_entries):
+def filter_logs(args, repo, log_entries):
     flogs = [] # filtered logs as dict(from, to, log)
     uniq = {}
+    logged_count = 0
     for l in log_entries:
         m = re.match(r".*checkout: moving from (.*) to (.*)", l.message)
         if m == None:
@@ -178,6 +179,11 @@ def filter_logs(repo, log_entries):
             continue
 
         flogs.append(log)
+
+        logged_count += 1
+        if args.limit > 0 and logged_count >= args.limit:
+            break
+
     return flogs
 
 def last_commit(repo, reflog):
@@ -227,11 +233,10 @@ def walk_reflog(args, repo):
     head = repo.head
     log = head.log()
     log.reverse()# sort as most recent first
-    log = filter_logs(repo, log)
+    log = filter_logs(args, repo, log)
 
     config = repo.config_reader()
 
-    n = 0
     for l in log:
         l.reltime = reltime_to_now(*l.log.time)
         last_commit(repo, l)
@@ -252,10 +257,6 @@ def walk_reflog(args, repo):
 
         if args.last_commit:
             print_commit(args, l.commit)
-
-        n += 1
-        if args.limit > 0 and n >= args.limit:
-            break
 
 def get_configured_limit(repo):
     config = repo.config_reader()
