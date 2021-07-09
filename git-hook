@@ -11,6 +11,7 @@ fi
 
 cmd=$1
 hook=$2
+hook_disabled=$hook.disabled
 case $cmd in
     enable)
         ;;
@@ -33,21 +34,25 @@ while ! [ -e ".git" ]; do
     cd ..
 done
 
-hook=.git/hooks/$hook
-if ! [[ -e "$hook" ]]; then
-    echo "Hook $hook does not exist"
-    exit 1
-fi
+pushd .git/hooks || exit 1
 
 case $cmd in
     enable)
-        mv $hook.disabled $hook
-        chmod +x $hook
+        if ! [[ -e "$hook_disabled" ]]; then
+            echo "Hook $hook_disabled does not exist"
+            exit 1
+        fi
+        mv $hook_disabled $hook
         ;;
     disable)
-        chmod -x $hook
-        mv $hook $hook.disabled
+        if ! [[ -e "$hook" ]]; then
+            echo "Hook $hook does not exist"
+            exit 1
+        fi
+        mv $hook $hook_disabled
         ;;
     *)
         ;;
 esac
+
+popd || exit 1
