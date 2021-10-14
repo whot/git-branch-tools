@@ -1,0 +1,22 @@
+#!/bin/bash
+
+branch="$1"
+remotes="origin gitlab github"
+
+if [[ -z "$branch" ]]; then
+   for remote in $remotes; do
+      if $(git remote get-url $remote &> /dev/null); then
+          branch=$(git remote show $remote | grep "HEAD branch:" | awk '{print $3;}')
+          break
+      fi
+    done
+fi
+
+[ -z "$branch" ] && echo "Unable to find default branch" && exit 1
+
+echo "Deleting branches merged into $branch"
+
+for to_delete in $(git branch --merged $branch | grep -v "^\*" | grep -v "$branch"); do
+    echo "Deleting $to_delete ($(git log -1 --pretty=reference $to_delete)"
+    git branch --quiet -d "$to_delete"
+done
