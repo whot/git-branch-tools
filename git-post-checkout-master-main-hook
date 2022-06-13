@@ -1,0 +1,36 @@
+#!/bin/bash
+# Exits with status 1 when checking out the master branch and a "main" branch
+# is available
+
+prev_head=$1
+new_head=$2
+branch_checkout=$3
+
+# Ignore any non-branch checkouts
+if [[ "$branch_checkout" -ne 1 ]]; then
+	exit 0
+fi
+
+# if we don't have a main branch, exit early
+if ! git describe main > /dev/null; then
+	exit 0
+fi
+
+remotes="origin gitlab github"
+master_branch="master"
+for remote in $remotes; do
+	git remote | grep --quiet "$remote"
+	if [[ $? -eq 0 ]]; then
+		master_branch="$remote/$master_branch"
+		break
+	fi
+done
+
+
+master_commit=$(git rev-list -1 $master_branch)
+
+if [[ "$new_head" == "$master_commit" ]]; then
+	echo "WARNING: the master branch is no longer in use"
+	exit 1
+fi
+
