@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+user="$1"
+repo="$( basename $PWD)"
+
+if [[ -z "$user" ]]; then
+	echo "Usage: $(basename $0) <username>"
+	exit 1
+fi
+
+url=$(git remote get-url origin | sed -e 's|https://||' -e 's|:.*||' -e 's|/.*||')
+
+case $url in
+	*gitlab*)
+		;;
+	*github*)
+		;;
+	*)
+		echo "Don't know how to name remote for $url"
+		exit 1
+		;;
+esac
+
+git remote add "$user" "http://$url/$user/$repo"
+git fetch "$user"
