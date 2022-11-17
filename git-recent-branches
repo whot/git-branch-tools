@@ -33,7 +33,7 @@ def reltime_to_now(t, tzoff):
 
     if delta < 0:
         logging.error("Date is in the future?")
-        return
+        return "in the future?"
 
     datewords = (
             (60 * 60 * 24 * 365, lambda n : gettext.ngettext("year", "years", n)),
