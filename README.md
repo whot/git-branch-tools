@@ -4,7 +4,7 @@ git-branch-tools
 A set of git tools to help manage branches better. Some of the tools use
 git-config hooks for local customization, have a look at the tools directly.
 
-Archiving branches 
+Archiving branches
 ------------------
 Sometimes branches are not actively developed anymore but need to be
 preserved for posterity. These branches are clogging up the branch view.
@@ -22,7 +22,7 @@ week, or the week before.
     git recent-branches
 
 lists the various branches checked out over the history, including the date
-and last commit date on that branch.  
+and last commit date on that branch.
 
 Example:
 
@@ -62,7 +62,7 @@ named after the patch set and date.
     $> ls patches
     patches/patches-2013-08-30-10:47-origin\master..HEAD~2/
     patches/latest -> patches/patches-2013-08-30-10:47-origin\master..HEAD~2/
- 
+
 patches/latest always links to the last generated patcheset.
 
 Note: git-patch-set will run the pre-push hook (if any). Ideally, you'll
@@ -90,7 +90,7 @@ files). Finish up, it will re-commit with the same message and drop you
 back to the shell to finish up and continue. Alternatively,
 
     $> git split-commit --after
-    
+
 will drop you into a shell immediately, letting you git add and commit
 anything you want committed _before_ the current commit. Exiting the shell
 will commit the rest.
@@ -125,7 +125,7 @@ of commit messages.
 This will open up an editor window. Write the line you need to add to the
 commit range and exit. The line will be appended to all commits in the
 range.
-   
+
 
 Testing commits in sequence
 ---------------------------

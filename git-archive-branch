@@ -129,7 +129,7 @@ archive() {
 
     local readonly tmpfile=`mktemp`
     cat > $tmpfile << EOF
-    Branch:   $branch. 
+    Branch:   $branch.
     Archived: `date`.
 
     $description

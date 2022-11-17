@@ -3,7 +3,7 @@
 # Split the last commit into multiple patches. Usually used during
 # re-basing.
 #
-# 
+#
 
 usage() {
     cat <<- EOF

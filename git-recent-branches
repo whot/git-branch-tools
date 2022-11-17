@@ -2,7 +2,7 @@
 # coding: utf-8
 #
 # git recent-branches shows a list of recently checked-out branches.
-# 
+#
 
 import git
 import re
@@ -96,7 +96,7 @@ def is_sha1sum_short(s):
     m = re.match(r"[a-f0-9]{7}", s)
     if m == None:
         return False
-        
+
     # could be a word. check for at least two numbers, not as the first or
     # last char. if you name your 7-letter branches a23dead, your fault.
     # second condition: digit + letter + digit + letter

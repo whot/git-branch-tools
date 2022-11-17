@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+#
 # Create a patch set, save it in patches/patches-<date>-<baseref>
 # Points patches/latest to the last created directory, so it's easy to
 # git-send-email from there

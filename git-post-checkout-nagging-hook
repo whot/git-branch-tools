@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # post-checkout hook that reminds you to add a branch description whenever
-# you checkout that branch. 
+# you checkout that branch.
 #
 # save as: .git/hooks/post-checkout
 # don't forget to chmod +x
