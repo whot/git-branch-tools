@@ -8,7 +8,7 @@ if [[ -z "$user" ]]; then
 	exit 1
 fi
 
-url=$(git remote get-url origin | sed -e 's|https://||' -e 's|:.*||' -e 's|/.*||')
+url=$(git remote get-url origin | sed -e 's|https://||' -e 's|ssh://git@||' -e 's|:.*||' -e 's|/.*||')
 
 case $url in
 	*gitlab*)
