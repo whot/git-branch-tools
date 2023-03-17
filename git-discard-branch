@@ -1,6 +1,12 @@
 #!/bin/bash
 
 branch="$1"
+
+if [[ -z "$branch" ]]; then
+  echo "Usage: git discard-branch <branch>"
+  exit 1
+fi
+
 date=$(date +%F)
 # Drop the wip/ prefix, if any
 name="${branch/wip\//}"
