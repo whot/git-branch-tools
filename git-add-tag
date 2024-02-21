@@ -10,10 +10,11 @@ if [[ "$range" != *..* ]]; then
     range="$range.."
 fi
 
-readonly FAKE_GIT_DIR=`mktemp -d`
-readonly FILE=$FAKE_GIT_DIR/.git/COMMIT_EDITMSG
-mkdir -p $FAKE_GIT_DIR/.git/
+readonly FAKE_GIT_DIR=$(mktemp -d)
+readonly FILE="$FAKE_GIT_DIR/.git/COMMIT_EDITMSG"
+mkdir -p "$FAKE_GIT_DIR/.git/"
 
-$EDITOR $FILE
-git filter-branch -f --msg-filter "sed '\$a `cat $FILE`'" $range
-rm -rf $FAKE_GIT_DIR
+$EDITOR "$FILE"
+export FILTER_BRANCH_SQUELCH_WARNING=1
+git filter-branch -f --msg-filter "sed '\$a $(cat "$FILE")'" "$range"
+rm -rf "$FAKE_GIT_DIR"
