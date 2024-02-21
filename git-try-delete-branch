@@ -16,7 +16,7 @@ set +e
 git rebase --quiet $sha
 if [[ $? -ne 0 ]]; then
     git rebase --abort
-    git checkout -
+    git checkout -f -
     echo "Failed to rebase, aborting"
     exit 1
 fi
