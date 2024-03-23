@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Add a Signed-off-by tag to each commit
+#
+# Usage: git add-sob HEAD~4
+
+git rebase --exec 'git commit --amend --no-edit -n -s' -t
