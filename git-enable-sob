@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Usage: git enable-sob
+#
+# in the git repo that requires signed-off commits
+
+author=$(git config user.name)
+email=$(git config user.email)
+
+cat > .git/git-sob-commit-template <<EOF
+
+
+Signed-off-by: $author <$email>
+EOF
+git config --local commit.template .git/git-sob-commit-template
