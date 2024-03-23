@@ -1,0 +1,9 @@
+#!/usr/bin/env bash 
+#
+# Usage: git sed 's/abc/def/' **/*.c
+
+expr=$1
+shift
+
+set -e
+git ls-files -z $@ | xargs -0 sed -i "$expr"
