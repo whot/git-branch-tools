@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# List any files needing changes during a rebase
+#
+# This provides the list of files needing merges after you get after a git
+# rebase that triggers conflicts
+
+git diff --name-only --diff-filter=U

@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Add any files needing changes during a rebase
+#
+# Usage:
+# $ git rebase origin/master
+# # CONFLICT in a thousand files
+# # fix them one-by one
+# $ git add-unmerged
+# $ git rebase --continue
+
+git add $(git diff --name-only --diff-filter=U)
