@@ -4,22 +4,35 @@
 # without it complaining about being non merged.
 #
 
-branch="$1"
-test -z "$branch" && echo "Usage: `basename $0` <branchname>" && exit 1
+arg="$1"
+test -z "$arg" && echo "Usage: $(basename "$0") [--all|<branchname>]" && exit 1
 
-sha=`git log -n1 --pretty=format:%H`
+delete_branch () {
+    branch="$1"
 
-set -e
-git log -n1 --format=short
-git checkout --quiet "$branch"
-set +e
-git rebase --quiet $sha
-if [[ $? -ne 0 ]]; then
-    git rebase --abort
-    git checkout -f -
-    echo "Failed to rebase, aborting"
-    exit 1
+    sha=$(git log -n1 --pretty=format:%H)
+
+    set -e
+    git log -n1 --format=short
+    git checkout --quiet "$branch"
+    set +e
+    if ! git rebase --quiet "$sha"; then
+        git rebase --abort
+        git checkout -f -
+        echo "Failed to rebase, aborting"
+        return 1
+    fi
+    git branch --unset-upstream
+    git checkout -
+    git branch -d "$branch"
+    set -e
+}
+
+if [ "$arg" = "--all" ]; then
+    for branch in $(git branch | grep wip); do
+        delete_branch "$branch"
+    done
+else
+    delete_branch "$arg"
+    exit $?
 fi
-set -e
-git checkout -
-git branch -d "$branch"
