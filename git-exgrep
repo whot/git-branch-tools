@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+#
+# git grep wrapper that ignores a bunch of annoying files that mess up git grep's output
+
+# NEWS and Changelog are fake-ish globs so avoid failing on nonexisting files
+excludes=("*.po" "NEWS" "*ChangeLog*")
+
+exec git grep $@ ${excludes[@]/#/:!}
