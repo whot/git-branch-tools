@@ -16,14 +16,14 @@ delete_branch () {
     git log -n1 --format=short
     git checkout --quiet "$branch"
     set +e
-    if ! git rebase --quiet "$sha"; then
+    if ! git -c advice.skippedCherryPicks=false rebase --quiet "$sha"; then
         git rebase --abort
         git checkout -f -
         echo "Failed to rebase, aborting"
         return 1
     fi
-    git branch --unset-upstream
-    git checkout -
+    git branch --unset-upstream > /dev/null 2>&1
+    git checkout --quiet -
     git branch -d "$branch"
     set -e
 }
