@@ -29,7 +29,7 @@ def reltime_to_now(t, tzoff):
     utc_sec = t - tzoff;
     now_utc_sec = time.time() - time.timezone
 
-    delta = now_utc_sec - utc_sec
+    delta = int(now_utc_sec - utc_sec)
 
     if delta < 0:
         logging.error("Date is in the future?")
