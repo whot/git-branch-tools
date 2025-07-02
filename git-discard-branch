@@ -1,11 +1,27 @@
 #!/bin/bash
 
 branch="$1"
+case $branch in
+    --help)
+        echo "Usage: git discard-branch <branch>"
+        exit 0
+        ;;
+    **)
+        ;;
+esac
 
 if [[ -z "$branch" ]]; then
-  echo "Usage: git discard-branch <branch>"
-  exit 1
+    branch=$(git symbolic-ref --short HEAD)
 fi
+
+case $branch in
+    master | main)
+        echo "master and main branches cannot be discarded"
+        exit 1
+        ;;
+    **)
+        ;;
+esac
 
 date=$(date +%F)
 # Drop the wip/ prefix, if any
