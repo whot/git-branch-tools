@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import sys
+import subprocess
+
+
+def get_git_authors(revlist) -> list[str]:
+    try:
+        command = ["git", "log", "--pretty=format:%an", revlist]
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        authors = sorted(list(set(result.stdout.strip().splitlines())))
+        return authors
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return []
+
+
+def join_list(items: list[str]) -> str:
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+
+    items_but_last = ", ".join(items[:-1])
+
+    return f"{items_but_last} and {items[-1]}"
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        from pathlib import Path
+
+        script = Path(sys.argv[0]).name
+        print(f"Usage: {script} <git-rev-list>")
+        print(f"Example: {script} 'v1.0.0..HEAD'")
+        sys.exit(1)
+
+    authors = get_git_authors(sys.argv[1])
+    print(join_list(authors))
