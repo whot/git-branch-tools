@@ -23,7 +23,7 @@ case $branch in
         ;;
 esac
 
-date=$(date +%F)
+date=$(git log -1 --format=%ad --date=short "$branch")
 # Drop the wip/ prefix, if any
 name="${branch/wip\//}"
 
