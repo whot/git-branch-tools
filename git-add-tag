@@ -1,20 +1,76 @@
 #!/bin/bash
+#
+# Usage: git-add-tag <commit range>
+#
+# Description:
+#    Append a tag (e.g. Reviewed-by, Acked-by) to every commit in a range.
+#    Opens $EDITOR for you to type the tag line(s), then amends each commit.
+#
+# Examples:
+#    git-add-tag HEAD~3      # tag the last 3 commits
+#    git-add-tag abc123..    # tag abc123 to HEAD
+#
 
-# fake some name that looks like a git commit to vim
-if [ $# -ne 1 ]; then
-    echo  "usage: $0 <commit range>"
+set -euo pipefail
+
+usage () {
+    sed -n -e '/^#$/,/^$/s/^#[ ]\?//p' "${BASH_SOURCE[0]}"
+}
+
+if [ $# -ne 1 ] || [ "$1" = "--help" ]; then
+    usage
+    exit 1
 fi
 
 range="$1"
-if [[ "$range" != *..* ]]; then
-    range="$range.."
+
+# Determine the base commit for rebase.
+# "A..B" → base is A, "A.." → base is A, "A" (no dots) → treat as "A.."
+if [[ "$range" == *..* ]]; then
+    base="${range%%.*}"
+    tip="${range##*..}"
+    tip="${tip:-HEAD}"
+else
+    base="$range"
+    tip="HEAD"
 fi
 
-readonly FAKE_GIT_DIR=$(mktemp -d)
-readonly FILE="$FAKE_GIT_DIR/.git/COMMIT_EDITMSG"
-mkdir -p "$FAKE_GIT_DIR/.git/"
+# If the range doesn't end at HEAD we need to detach first, rebase, then
+# restore. For simplicity, only support ranges ending at HEAD (the common case).
+if [ "$tip" != "HEAD" ]; then
+    echo "Error: ranges not ending at HEAD are not supported." >&2
+    echo "Check out the end of your range first, then re-run." >&2
+    exit 1
+fi
 
-$EDITOR "$FILE"
-export FILTER_BRANCH_SQUELCH_WARNING=1
-git filter-branch -f --msg-filter "sed '\$a $(cat "$FILE")'" "$range"
-rm -rf "$FAKE_GIT_DIR"
+# Fake a .git directory so the editor gets syntax highlighting for commit messages
+readonly TMPDIR_TAG=$(mktemp -d)
+trap 'rm -rf "$TMPDIR_TAG"' EXIT
+
+readonly FAKE_GIT_DIR="$TMPDIR_TAG/.git"
+readonly TAG_FILE="$FAKE_GIT_DIR/COMMIT_EDITMSG"
+mkdir -p "$FAKE_GIT_DIR"
+
+# Let the user type the tag(s) to append
+"${EDITOR:-vi}" "$TAG_FILE"
+
+if [ ! -s "$TAG_FILE" ]; then
+    echo "Empty tag file, aborting." >&2
+    exit 1
+fi
+
+# Use git rebase --exec to amend each commit in the range.
+# We append a blank line + the tag to each commit message.
+# The exec command must be a single line (git >= 2.49 rejects newlines),
+# so we write a helper script and point --exec at it.
+readonly EXEC_SCRIPT="$TMPDIR_TAG/amend.sh"
+cat > "$EXEC_SCRIPT" <<'SCRIPT'
+#!/bin/bash
+set -e
+tag_file="$1"
+msg=$(git log --format=%B -n1)
+printf '%s\n\n%s\n' "$msg" "$(cat "$tag_file")" | git commit --amend -F -
+SCRIPT
+chmod +x "$EXEC_SCRIPT"
+
+git rebase "$base" --exec "$EXEC_SCRIPT $TAG_FILE"
