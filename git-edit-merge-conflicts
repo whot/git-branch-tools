@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Open all files with merge conflict markers in $EDITOR
+#
+# Usage:
+# $ git rebase origin/main
+# # CONFLICT in a thousand files
+# $ git resolve-conflicts
+# # fix them in your editor
+# $ git add-unmerged
+# $ git rebase --continue
+
+mapfile -t unmerged < <(git diff --name-only --diff-filter=U)
+
+if [ ${#unmerged[@]} -eq 0 ]; then
+    echo "No unmerged files found"
+    exit 0
+fi
+
+mapfile -t files < <(grep -rl '^<<<<<<<' -- "${unmerged[@]}")
+
+if [ ${#files[@]} -eq 0 ]; then
+    echo "No files with conflict markers found"
+    exit 0
+fi
+
+${EDITOR:-vi} "${files[@]}"
