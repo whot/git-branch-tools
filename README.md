@@ -1,11 +1,14 @@
 git-branch-tools
 ================
 
-A set of git tools to help manage branches better. Some of the tools use
-git-config hooks for local customization, have a look at the tools directly.
+Many years ago this was a set of git tools to help manage branches better. 
+This is now a grab-bag of scripts I use locally on a frequest basis.
 
-Archiving branches
-------------------
+Some of the tools use git-config hooks for local customization, have a look at
+the tools directly.
+
+Archiving/discarding branches
+-----------------------------
 Sometimes branches are not actively developed anymore but need to be
 preserved for posterity. These branches are clogging up the branch view.
 
@@ -13,6 +16,22 @@ preserved for posterity. These branches are clogging up the branch view.
 
 moves `mybranch` to `archive/2013/mybranch` and tags the current top commit
 with a message containing bits of the branch history.
+
+A similar functionality is discarding a branch:
+
+    git discard-branch mybranch
+
+This moves to `discarded/2026-04-01/mybranch` (time stamp of last commit). It's
+the same thing but signals an explicitly discarded approach.
+
+Deleting branches
+-----------------
+
+The `git-delete-merged-branches` (aliased to `git dmb` in my git config) deletes
+any branches merged into `main` or `master`. If you're on GitHub with rebasing
+merges or you use Marge Bot on GitLab this won't work as the commit shas change
+when merging. Use `git try-delete-branch` instead which will rebase the branch
+and then try to delete it.
 
 Showing recent branches
 -----------------------
